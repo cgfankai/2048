@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="zh_cn">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,height=device-height, initial-scale=1.0">
+    <title>2048</title>
+    <style>
+        header {
+            display: block;
+            margin: 0 auto;
+            width: 100%;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        header #b_new_game {
+            padding: 5px 15px;
+            background-color: #8f7a66;
+            color: white;
+        }
+
+        td {
+            width: 100px;
+            height: 100px;
+            line-height: 100px;
+            margin: 10px;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+
+<body style="padding: 0px 0px;">
+    <header>
+        <h1>2048</h1>
+        <button id="b_new_game" onclick="init()">新游戏</button>
+        <p>当前步数:<span id="cur-step-num">0</span>&nbsp;&nbsp;最高步数:<span id="high-step-num">0</span></p>
+    </header>
+
+    <table style="background-color: #8f7a66;padding: 5px;margin: 0px auto;">
+        <tr>
+            <td style="background-color: rgb(238, 228, 218);">100</td>
+            <td>200</td>
+            <td>300</td>
+            <td>300</td>
+        </tr>
+        <tr>
+            <td>400</td>
+            <td>500</td>
+            <td>600</td>
+            <td>300</td>
+        </tr>
+        <tr>
+            <td>100</td>
+            <td>200</td>
+            <td>300</td>
+            <td>300</td>
+        </tr>
+        <tr>
+            <td>400</td>
+            <td>500</td>
+            <td>600</td>
+            <td>300</td>
+        </tr>
+    </table>
+
+    <script>
+        var curStepNum = 0;
+        var highStepNum = 0;
+        function generateOneNewTd() {
+            var tds = document.querySelectorAll("td");
+            var sumOfNoNumTds = []
+            for (var i = 0; i < tds.length; i++) {
+                if (tds[i].innerHTML == null || tds[i].innerHTML == "") {
+                    sumOfNoNumTds.push(tds[i])
+                }
+            }
+            if (sumOfNoNumTds.length > 0) {
+                var randomIndex = Math.floor((Math.random() * 100)) % sumOfNoNumTds.length
+                sumOfNoNumTds[randomIndex].innerHTML = Math.random() > 0.5 ? 2 : 4
+                sumOfNoNumTds[randomIndex].style.backgroundColor = "rgb(238, 228, 218)"
+            }
+        }
+
+        function getNumberBackgroundColor(number) {
+            switch (number) {
+                case 2:
+                    return '#eee4da';
+                    break;
+                case 4:
+                    return '#ede0c8';
+                    break;
+                case 8:
+                    return '#f2b179';
+                    break;
+                case 16:
+                    return '#f59563';
+                    break;
+                case 32:
+                    return '#f67c5f';
+                    break;
+                case 64:
+                    return '#f65e3b';
+                    break;
+                case 128:
+                    return '#edcf72';
+                    break;
+                case 256:
+                    return '#edcc61';
+                    break;
+                case 512:
+                    return '#9c0';
+                    break;
+                case 1024:
+                    return '#33b5e5';
+                    break;
+                case 2048:
+                    return '#09c';
+                    break;
+                case 4096:
+                    return '#a6c';
+                    break;
+                case 8192:
+                    return '#93c';
+                    break;
+            }
+            return 'black';
+        }
+        function getNumberColor(number) {
+            if (number <= 4) {
+                return '#776e65';
+            }
+            return 'white';
+        }
+
+        function init() {
+            /**
+             * 初始化
+             **/
+            var tds = document.querySelectorAll("td");
+            for (var i = 0; i < tds.length; i++) {
+                tds[i].setAttribute("align", "center")
+                tds[i].innerHTML = ""
+                tds[i].style.backgroundColor = "rgb(205,193,180)"
+            }
+            generateOneNewTd()
+            generateOneNewTd()
+            document.querySelector("#cur-step-num").innerHTML = 0
+            curStepNum = 0
+        }
+        function tdsToBoard() {
+            /**
+             * 1,   2,  3,  4
+             * 5,   6,  7,  8
+             * 9,   10, 11, 12
+             * 13,  14, 15, 16
+             **/
+            var tds = document.querySelectorAll("td");
+            var board = []
+            board[0] = []
+            board[1] = []
+            board[2] = []
+            board[3] = []
+            for (var i = 0; i < 4; i++) {
+                board[0][i] = tds[i + 0 * 4].innerHTML
+                board[1][i] = tds[i + 1 * 4].innerHTML
+                board[2][i] = tds[i + 2 * 4].innerHTML
+                board[3][i] = tds[i + 3 * 4].innerHTML
+            }
+            return board;
+        }
+
+        function boadrToTds(board) {
+            var tds = document.querySelectorAll("td");
+            for (var row = 0; row < board.length; row++) {
+                for (var col = 0; col < board[row].length; col++) {
+                    tds[row * 4 + col].innerHTML = board[row][col];
+                    if (board[row][col] == "") {
+                        tds[row * 4 + col].style.backgroundColor = "rgb(205,193,180)"
+                    } else {
+                        tds[row * 4 + col].style.backgroundColor = getNumberBackgroundColor(parseInt(board[row][col]))
+                    }
+                }
+            }
+        }
+
+        function canUp() {
+            var board = tdsToBoard();
+            for (var col = 0; col < 4; col++) {
+                for (var row = 1; row < 4; row++) {
+                    if (board[row][col] != "" && (board[row - 1][col] == "" || board[row - 1][col] == board[row][col])) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+        function canDown() {
+            var board = tdsToBoard();
+            for (var col = 0; col < 4; col++) {
+                for (var row = 0; row < 3; row++) {
+                    if (board[row][col] != "" && (board[row + 1][col] == "" || board[row + 1][col] == board[row][col])) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+        function canLeft() {
+            var board = tdsToBoard();
+            for (var i = 0; i < 4; i++) {
+                for (var j = 1; j < 4; j++) {
+                    if (board[i][j] != "" && (board[i][j - 1] == "" || board[i][j - 1] == board[i][j])) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+        function canRight() {
+            var board = tdsToBoard();
+            for (var row = 0; row < 4; row++) {
+                for (var col = 2; col >= 0; col--) {
+                    if (board[row][col] != "" && (board[row][col + 1] == "" || board[row][col + 1] == board[row][col])) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        function isHasBlankTd(board) {
+            var tds = document.querySelectorAll("td");
+            for (var i = 0; i < tds.length; i++) {
+                if (tds[i].innerHTML == "") {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function isNoObstacleVertical(colIndex, rowIndexUp, rowIndexDown, board) {
+            //两个格子直接竖直方向有无障碍物
+            for (var i = rowIndexUp + 1; i < rowIndexDown; i++) {
+                if (board[i][colIndex] == "") {
+                    continue;
+                } else {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function isNoObstacleHorizontal(rowIndex, colIndexBefore, colIndexAfter, board) {
+            //两个格子直接水平方向有无障碍物
+            for (var i = colIndexBefore + 1; i < colIndexAfter; i++) {
+                if (board[rowIndex][i] == "") {
+                    continue;
+                } else {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function moveUp() {
+            if (canUp()) {
+                var board = tdsToBoard();
+                for (var col = 0; col < 4; col++) {
+                    for (var row = 1; row < 4; row++) {
+                        if (board[row][col] != "") {
+                            //非空白格子才进行动作。空白格子不管
+
+                            for (var rowUpIndex = 0; rowUpIndex < row; rowUpIndex++) {
+                                if (board[rowUpIndex][col] == "" && isNoObstacleVertical(col, rowUpIndex, row, board)) {
+                                    board[rowUpIndex][col] = board[row][col]
+                                    board[row][col] = ""
+                                } else if (board[rowUpIndex][col] == board[row][col] && isNoObstacleVertical(col, rowUpIndex, row, board)) {
+                                    board[rowUpIndex][col] = parseInt(board[row][col]) + parseInt(board[rowUpIndex][col]);
+                                    board[row][col] = ""
+                                }
+                            }
+
+
+                        }
+                    }
+                }
+                boadrToTds(board);
+                generateOneNewTd()
+                curStepNum++;
+                document.querySelector("#cur-step-num").innerHTML = curStepNum
+            }
+        }
+        function moveDown() {
+            if (canDown()) {
+                var board = tdsToBoard();
+                for (var col = 0; col < 4; col++) {
+                    for (var row = 2; row >= 0; row--) {
+                        if (board[row][col] != "") {
+                            //非空白格子才进行动作。空白格子不管
+
+                            for (var rowDownIndex = 3; rowDownIndex > row; rowDownIndex--) {
+                                if (board[rowDownIndex][col] == "" && isNoObstacleVertical(col, row, rowDownIndex, board)) {
+                                    board[rowDownIndex][col] = board[row][col]
+                                    board[row][col] = ""
+                                } else if (board[rowDownIndex][col] == board[row][col] && isNoObstacleVertical(col, rowDownIndex, row, board)) {
+                                    board[rowDownIndex][col] = parseInt(board[row][col]) + parseInt(board[rowDownIndex][col]);
+                                    board[row][col] = ""
+                                }
+                            }
+
+
+                        }
+                    }
+                }
+                boadrToTds(board);
+                generateOneNewTd()
+                curStepNum++;
+                document.querySelector("#cur-step-num").innerHTML = curStepNum
+            }
+        }
+        function moveLeft() {
+            if (canLeft()) {
+                var board = tdsToBoard();
+                for (var row = 0; row < 4; row++) {
+                    for (var col = 1; col < 4; col++) {
+                        if (board[row][col] != "") {
+                            //非空白格子才进行动作。空白格子不管
+                            for (var colBeforeIndex = 0; colBeforeIndex < col; colBeforeIndex++) {
+                                if (board[row][colBeforeIndex] == "" && isNoObstacleHorizontal(row, colBeforeIndex, col, board)) {
+                                    board[row][colBeforeIndex] = board[row][col]
+                                    board[row][col] = ""
+                                } else if (board[row][colBeforeIndex] == board[row][col] && isNoObstacleHorizontal(row, colBeforeIndex, col, board)) {
+                                    board[row][colBeforeIndex] = parseInt(board[row][col]) + parseInt(board[row][colBeforeIndex]);
+                                    board[row][col] = ""
+                                }
+                            }
+                        }
+                    }
+                }
+                boadrToTds(board);
+                generateOneNewTd()
+                curStepNum++;
+                document.querySelector("#cur-step-num").innerHTML = curStepNum
+            }
+        }
+
+
+        function moveRight() {
+            if (canRight()) {
+                var board = tdsToBoard();
+                for (var row = 0; row < 4; row++) {
+                    for (var col = 2; col >= 0; col--) {
+                        if (board[row][col] != "") {
+                            //非空白格子才进行动作。空白格子不管
+                            for (var colAfterIndex = 4; colAfterIndex > col; colAfterIndex--) {
+                                if (board[row][colAfterIndex] == "" && isNoObstacleHorizontal(row, col, colAfterIndex, board)) {
+                                    board[row][colAfterIndex] = board[row][col]
+                                    board[row][col] = ""
+                                } else if (board[row][colAfterIndex] == board[row][col] && isNoObstacleHorizontal(row, col, colAfterIndex, board)) {
+                                    board[row][colAfterIndex] = parseInt(board[row][col]) + parseInt(board[row][colAfterIndex]);
+                                    board[row][col] = ""
+                                }
+                            }
+                        }
+                    }
+                }
+                boadrToTds(board);
+                generateOneNewTd()
+                curStepNum++;
+                document.querySelector("#cur-step-num").innerHTML = curStepNum
+            }
+        }
+
+        function isGameOver() {
+            if (canDown() || canUp() || canLeft() || canRight()) {
+                return false;
+            }
+            return true;
+        }
+
+        document.body.onload = function () {
+            init()
+            document.addEventListener("keydown", function (event) {
+                if (event.keyCode >= 37 && event.keyCode <= 40) {
+                    switch (event.keyCode) {
+                        case 37://left
+                            if (moveLeft()) {
+                            }
+                            event.preventDefault();
+                            break;
+                        case 38://up
+                            if (moveUp()) {
+                            }
+                            event.preventDefault();
+                            break;
+                        case 39://right
+                            if (moveRight()) {
+                            }
+                            event.preventDefault();
+                            break;
+                        case 40://down
+                            if (moveDown()) {
+                            }
+                            event.preventDefault();
+                            break;
+                        default:
+                            break;
+                    }
+
+                    if (highStepNum < curStepNum) {
+                        highStepNum = curStepNum
+                        document.querySelector("#high-step-num").innerHTML = curStepNum
+                    }
+                    if (isGameOver()) {
+                        alert("游戏结束")
+                    }
+
+                }
+            });
+            document.addEventListener('touchstart', function (event) {
+                startX = event.touches[0].pageX;
+                startY = event.touches[0].pageY;
+            });
+            document.addEventListener('touchmove', function (event) {
+                event.preventDefault();
+            }, { passive: false });
+            var documentWidth = window.screen.availWidth;
+            var documentHeight = window.screen.availHeight;
+            document.addEventListener('touchend', function (event) {
+                endX = event.changedTouches[0].pageX;
+                endY = event.changedTouches[0].pageY;
+                var deltaX = endX - startX;
+                var deltaY = endY - startY;
+                if (Math.abs(deltaX) < 0.2 * documentWidth && Math.abs(deltaY) < 0.3 * documentWidth) {
+                    return;
+                }
+
+                if (Math.abs(deltaX) >= Math.abs(deltaY)) {
+                    if (deltaX > 0) {
+                        moveRight();
+                    } else {
+                        moveLeft();
+                    }
+                } else {
+                    if (deltaY > 0) {
+                        moveDown();
+                    } else {
+                        moveUp();
+                    }
+                }
+
+                if (highStepNum < curStepNum) {
+                    highStepNum = curStepNum
+                    document.querySelector("#high-step-num").innerHTML = curStepNum
+                }
+                if (isGameOver()) {
+                    alert("游戏结束")
+                }
+            });
+
+        }
+    </script>
+</body>
+
+</html>
